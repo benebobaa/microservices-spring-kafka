@@ -1,0 +1,14 @@
+package com.beneboba.product_service.model.event;
+
+public enum SagaEventType {
+    ORDER_CREATED,
+    PRODUCT_CREATED,
+    PRODUCT_UPDATED,
+    PRODUCT_RESERVED,
+    PRODUCT_RELEASED,
+    PRODUCT_RESERVATION_FAILED,
+    PAYMENT_PROCESSED,
+    PAYMENT_FAILED,
+    SAGA_COMPLETED,
+    SAGA_FAILED
+}
