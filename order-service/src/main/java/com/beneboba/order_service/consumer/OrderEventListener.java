@@ -1,10 +1,10 @@
 package com.beneboba.order_service.consumer;
 
-import com.beneboba.order_service.model.event.SagaEvent;
 import com.beneboba.order_service.service.OrderService;
 import com.beneboba.order_service.util.ObjectConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.SagaEvent;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +17,7 @@ public class OrderEventListener {
 
     private final ObjectConverter objectConverter;
 
-    @KafkaListener(topics = "order-topic", groupId = "bene-group")
+    @KafkaListener(topics = "${kafka.order-topic.topics}", groupId = "${spring.kafka.consumer.group-id}")
     public void handleOrderEvents(String sagaEvent) {
         log.info("handleOrderEvents :: {}", sagaEvent);
 

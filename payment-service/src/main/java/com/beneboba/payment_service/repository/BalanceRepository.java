@@ -1,6 +1,6 @@
 package com.beneboba.payment_service.repository;
 
-import com.beneboba.payment_service.model.Balance;
+import com.beneboba.payment_service.entity.Balance;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;

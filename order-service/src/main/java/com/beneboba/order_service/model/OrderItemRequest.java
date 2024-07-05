@@ -37,4 +37,14 @@ public class OrderItemRequest {
                 this.orderId
         );
     }
+
+    public org.example.common.OrderItem toEvent(){
+        return new org.example.common.OrderItem(
+                this.id,
+                this.productId,
+                this.price,
+                this.quantity,
+                this.orderId
+        );
+    }
 }

@@ -10,6 +10,7 @@
         <module name="product-service" />
         <module name="orchestrator-service" />
         <module name="order-service" />
+        <module name="sagaevent-dto" />
       </profile>
     </annotationProcessing>
   </component>

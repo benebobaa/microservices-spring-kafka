@@ -42,7 +42,18 @@
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>org.example</groupId>
+			<artifactId>common</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/sagaevent-dto-1.0-SNAPSHOT.jar</systemPath>
+		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>org.example</groupId>-->
+<!--			<artifactId>common</artifactId>-->
+<!--			<version>1.0</version>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>

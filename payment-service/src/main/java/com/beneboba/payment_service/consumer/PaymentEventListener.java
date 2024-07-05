@@ -1,13 +1,11 @@
 package com.beneboba.payment_service.consumer;
 
-import com.beneboba.payment_service.model.event.SagaEvent;
 import com.beneboba.payment_service.service.PaymentService;
 import com.beneboba.payment_service.util.ObjectConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.example.common.SagaEvent;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +17,7 @@ public class PaymentEventListener {
 
     private final ObjectConverter objectConverter;
 
-    @KafkaListener(topics = "payment-topic", groupId = "bene-group")
+    @KafkaListener(topics = "${kafka.payment-topic.topics}", groupId = "${spring.kafka.consumer.group-id}")
     public void handlePaymentEvents(String sagaEvent) {
         log.info("handlePaymentEvents :: {}", sagaEvent);
 

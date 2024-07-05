@@ -1,12 +1,12 @@
 package com.beneboba.payment_service.controller;
 
-import com.beneboba.payment_service.model.Balance;
-import com.beneboba.payment_service.model.Transaction;
+import com.beneboba.payment_service.entity.Balance;
+import com.beneboba.payment_service.entity.Transaction;
+import com.beneboba.payment_service.model.TransactionRequest;
 import com.beneboba.payment_service.service.PaymentService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/payments")
+@Slf4j
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -36,5 +37,14 @@ public class PaymentController {
             @RequestBody Balance balance
             ) {
         return paymentService.createNewBalance(balance);
+    }
+
+    @PostMapping("/create")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<Transaction> createTransaction(
+            @RequestBody TransactionRequest request
+    ) {
+        log.info("Create transaction :: {}", request);
+        return paymentService.createNewTransaction(request);
     }
 }

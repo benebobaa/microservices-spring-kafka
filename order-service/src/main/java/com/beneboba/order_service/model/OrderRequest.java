@@ -54,7 +54,20 @@ public class OrderRequest {
                 this.customerId,
                 this.billingAddress,
                 this.shippingAddress,
-                OrderStatus.PROCESSING,
+                this.orderStatus,
+                this.paymentMethod,
+                0,
+                this.orderDate
+        );
+    }
+
+    public org.example.common.Order toEvent(){
+        return new org.example.common.Order(
+                this.id,
+                this.customerId,
+                this.billingAddress,
+                this.shippingAddress,
+                org.example.common.OrderStatus.PROCESSING,
                 this.paymentMethod,
                 0,
                 this.orderDate

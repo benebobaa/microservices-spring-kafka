@@ -1,0 +1,33 @@
+{
+  "sagaId": "a583b847-3b4f-4f72-b015-7a4cc9b1b790",
+  "message": "Payment failed for order 1",
+  "type": "SAGA_FAILED",
+  "orderRequest": {
+    "order": {
+      "id": 1,
+      "customerId": 2,
+      "billingAddress": "bene",
+      "shippingAddress": "string",
+      "orderStatus": "PROCESSING",
+      "paymentMethod": "dana",
+      "totalAmount": 300.0,
+      "orderDate": "2024-07-05"
+    },
+    "products": [
+      {
+        "id": null,
+        "productId": 2,
+        "price": 200.0,
+        "quantity": 1,
+        "orderId": 1
+      },
+      {
+        "id": null,
+        "productId": 1,
+        "price": 100.0,
+        "quantity": 1,
+        "orderId": 1
+      }
+    ]
+  }
+}

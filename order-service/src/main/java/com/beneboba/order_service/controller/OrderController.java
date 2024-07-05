@@ -4,6 +4,7 @@ import com.beneboba.order_service.entity.Order;
 import com.beneboba.order_service.model.OrderCreateRequest;
 import com.beneboba.order_service.model.OrderRequest;
 import com.beneboba.order_service.service.OrderService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -11,11 +12,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/orders")
 public class OrderController {
 
-    @Autowired
-    private OrderService orderService;
+    private final OrderService orderService;
 
     @GetMapping
     public Flux<OrderCreateRequest> getAllWithProducts() {

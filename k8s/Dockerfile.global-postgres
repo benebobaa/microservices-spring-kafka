@@ -1,0 +1,4 @@
+FROM postgres:16-alpine
+
+# Custom initialization scripts to create multiple databases
+COPY init-dbs.sh /docker-entrypoint-initdb.d/

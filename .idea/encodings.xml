@@ -4,5 +4,7 @@
     <file url="file://$PROJECT_DIR$/orchestrator-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/order-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/product-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/sagaevent-dto/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/sagaevent-dto/src/main/resources" charset="UTF-8" />
   </component>
 </project>

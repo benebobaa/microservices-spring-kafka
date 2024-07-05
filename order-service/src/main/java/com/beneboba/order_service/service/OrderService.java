@@ -6,15 +6,16 @@ import com.beneboba.order_service.model.OrderCreateRequest;
 import com.beneboba.order_service.model.OrderItemRequest;
 import com.beneboba.order_service.model.OrderRequest;
 import com.beneboba.order_service.entity.OrderStatus;
-import com.beneboba.order_service.model.event.OrderEvent;
-import com.beneboba.order_service.model.event.SagaEvent;
-import com.beneboba.order_service.model.event.SagaEventType;
 import com.beneboba.order_service.repository.OrderRepository;
 import com.beneboba.order_service.repository.OrderItemRepository;
 import com.beneboba.order_service.util.ObjectConverter;
 import com.beneboba.order_service.util.ValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.OrderEvent;
+import org.example.common.SagaEvent;
+import org.example.common.SagaEventType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -28,6 +29,9 @@ import java.util.UUID;
 @Slf4j
 public class OrderService {
 
+    @Value("${kafka.saga-topic-webclient.topics}")
+    String sagaTopic;
+
     private final OrderRepository orderRepository;
 
     private final OrderItemRepository orderItemRepository;
@@ -40,9 +44,10 @@ public class OrderService {
 
     public Mono<OrderCreateRequest> createOrder(OrderCreateRequest request) {
 
+        request.getOrder().setOrderStatus(OrderStatus.PROCESSING);
+
         return validationService.validate(request)
-                .flatMap(valid -> orderRepository.save(request.getOrder()
-                        .toEntity()))
+                .flatMap(valid -> orderRepository.save(request.getOrder().toEntity()))
                 .flatMap(order -> {
                     List<OrderItemRequest> orderItems = request.getProducts();
                     orderItems.forEach(orderItem -> orderItem.setOrderId(order.getId()));
@@ -61,9 +66,9 @@ public class OrderService {
                 })
                 .doOnSuccess(savedOrder -> {
                     OrderEvent orderEvent = new OrderEvent(
-                            savedOrder.getOrder().toEntity(),
+                            savedOrder.getOrder().toEvent(),
                             savedOrder.getProducts().stream()
-                                    .map(OrderItemRequest::toEntity)
+                                    .map(OrderItemRequest::toEvent)
                                     .toList()
                     );
 
@@ -74,12 +79,13 @@ public class OrderService {
                     String strEvent = objectConverter.convertObjectToString(event);
 
                     log.info("Sending ORDER_CREATED event :: {}", strEvent);
-                    kafkaTemplate.send("saga-topic", strEvent);
+                    kafkaTemplate.send(sagaTopic, strEvent);
                 });
     }
 
     public Mono<Order> updateOrderStatusAmountAndPrice(SagaEvent event) {
-        Order orderEvent = event.getOrderRequest().getOrder();
+
+        org.example.common.Order orderEvent = event.getOrderRequest().getOrder();
 
         return orderRepository.findById(orderEvent.getId())
                 .flatMap(order -> {
@@ -142,7 +148,6 @@ public class OrderService {
                                     }
                             );
                         }
-
                 );
     }
 
