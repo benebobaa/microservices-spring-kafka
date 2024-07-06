@@ -13,14 +13,15 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class ProductClient {
 
-    @Value("${product-api-baseurl}")
-    private String productApiBaseUrl;
 
     private final WebClient webClient;
 
-    public ProductClient(WebClient.Builder webClientBuilder) {
+    public ProductClient(WebClient.Builder webClientBuilder,
+                         @Value("${product-api-baseurl}") String productApiBaseUrl
+    ) {
+        log.info("ProductClient :: productApiBaseUrl: {}", productApiBaseUrl);
         this.webClient = webClientBuilder.baseUrl(
-                "http://localhost:8081"
+                productApiBaseUrl
         ).build();
     }
 

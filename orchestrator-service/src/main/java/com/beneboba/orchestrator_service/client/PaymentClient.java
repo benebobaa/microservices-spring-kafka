@@ -3,22 +3,25 @@ package com.beneboba.orchestrator_service.client;
 import com.beneboba.orchestrator_service.dto.payment.TransactionRequest;
 import com.beneboba.orchestrator_service.dto.payment.TransactionResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 @Service
+@Slf4j
 public class PaymentClient {
-
-    @Value("${product-api-baseurl}")
-    private String paymentApiBaseUrl;
 
     private final WebClient webClient;
 
-    public PaymentClient(WebClient.Builder webClientBuilder) {
+    public PaymentClient(
+            WebClient.Builder webClientBuilder,
+            @Value("${payment-api-baseurl}") String paymentApiBaseUrl
+                         ) {
+        log.info("PaymentClient :: paymentApiBaseUrl: {}", paymentApiBaseUrl);
         this.webClient = webClientBuilder.baseUrl(
-                "http://localhost:8083"
+                paymentApiBaseUrl
         ).build();
     }
 

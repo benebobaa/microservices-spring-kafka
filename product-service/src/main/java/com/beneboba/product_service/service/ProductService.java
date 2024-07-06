@@ -95,6 +95,4 @@ public class ProductService {
                 .reduce(0f, Float::sum);
         return new ProductsResponse(reservedProducts, totalAmount);
     }
-
-
 }
