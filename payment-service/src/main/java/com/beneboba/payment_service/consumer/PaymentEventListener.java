@@ -1,10 +1,11 @@
 package com.beneboba.payment_service.consumer;
 
+import com.beneboba.payment_service.producer.PaymentProducer;
 import com.beneboba.payment_service.service.PaymentService;
 import com.beneboba.payment_service.util.ObjectConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.SagaEvent;
+import org.example.common.saga.SagaEvent;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class PaymentEventListener {
 
-    private final PaymentService paymentService;
+    private final PaymentProducer paymentProducer;
 
     private final ObjectConverter objectConverter;
 
@@ -25,7 +26,7 @@ public class PaymentEventListener {
 
         log.info("payment-topic :: {}", event);
 
-        paymentService.processPayment(event)
+        paymentProducer.processPayment(event)
                 .subscribe(
                         result -> System.out.println("Payment processed successfully: " + result),
                         error -> System.err.println("Error processing payment: " + error.getMessage())

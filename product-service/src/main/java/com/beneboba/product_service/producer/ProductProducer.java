@@ -6,9 +6,9 @@ import com.beneboba.product_service.repository.ProductRepository;
 import com.beneboba.product_service.util.ObjectConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.OrderEvent;
-import org.example.common.SagaEvent;
-import org.example.common.SagaEventType;
+import org.example.common.saga.OrderEvent;
+import org.example.common.saga.SagaEvent;
+import org.example.common.saga.SagaEventType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -61,13 +61,6 @@ public class ProductProducer {
                                 log.error("Product not found :: id {}", productId);
                                 return Mono.error(new ProductNotFoundException("Product not found: " + productId));
                             }));
-//                            .doOnError(error -> {
-//                                log.error("Product reservation failed :: id {}", productId);
-////                                SagaEvent event = new SagaEvent(sagaId, error.getMessage(),
-////                                         SagaEventType.PRODUCT_RESERVATION_FAILED, orderEvent);
-////                                kafkaTemplate.send(sagaTopic,
-////                                        objectConverter.convertObjectToString(event));
-//                            });
                 })
                 .then()
                 .doOnSuccess(v -> {

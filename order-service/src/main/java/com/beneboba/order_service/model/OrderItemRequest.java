@@ -38,8 +38,8 @@ public class OrderItemRequest {
         );
     }
 
-    public org.example.common.OrderItem toEvent(){
-        return new org.example.common.OrderItem(
+    public org.example.common.saga.OrderItem toEvent(){
+        return new org.example.common.saga.OrderItem(
                 this.id,
                 this.productId,
                 this.price,

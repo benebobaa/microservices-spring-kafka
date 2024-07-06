@@ -1,4 +1,4 @@
-package com.beneboba.payment_service.entity;
+package org.example.common.payment;
 
 public enum PaymentStatus {
     COMPLETED, FAILED, REFUNDED

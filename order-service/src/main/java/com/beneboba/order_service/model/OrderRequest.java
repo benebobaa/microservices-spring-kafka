@@ -61,13 +61,13 @@ public class OrderRequest {
         );
     }
 
-    public org.example.common.Order toEvent(){
-        return new org.example.common.Order(
+    public org.example.common.saga.Order toEvent(){
+        return new org.example.common.saga.Order(
                 this.id,
                 this.customerId,
                 this.billingAddress,
                 this.shippingAddress,
-                org.example.common.OrderStatus.PROCESSING,
+                org.example.common.saga.OrderStatus.PROCESSING,
                 this.paymentMethod,
                 0,
                 this.orderDate

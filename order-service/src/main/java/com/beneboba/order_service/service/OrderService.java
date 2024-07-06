@@ -2,6 +2,8 @@ package com.beneboba.order_service.service;
 
 import com.beneboba.order_service.entity.Order;
 import com.beneboba.order_service.entity.OrderItem;
+import com.beneboba.order_service.exception.OrderAlreadyCancelledException;
+import com.beneboba.order_service.exception.OrderNotFoundException;
 import com.beneboba.order_service.model.OrderCreateRequest;
 import com.beneboba.order_service.model.OrderItemRequest;
 import com.beneboba.order_service.model.OrderRequest;
@@ -12,17 +14,19 @@ import com.beneboba.order_service.util.ObjectConverter;
 import com.beneboba.order_service.util.ValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.OrderEvent;
-import org.example.common.SagaEvent;
-import org.example.common.SagaEventType;
+import org.example.common.saga.OrderEvent;
+import org.example.common.saga.SagaEvent;
+import org.example.common.saga.SagaEventType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +46,7 @@ public class OrderService {
 
     private final ObjectConverter objectConverter;
 
+    @Transactional
     public Mono<OrderCreateRequest> createOrder(OrderCreateRequest request) {
 
         request.getOrder().setOrderStatus(OrderStatus.PROCESSING);
@@ -83,9 +88,50 @@ public class OrderService {
                 });
     }
 
+    @Transactional
+    public Mono<OrderCreateRequest> cancelOrderAndRefund(Long orderId) {
+        return orderRepository.findById(orderId)
+                .switchIfEmpty(Mono.error(new OrderNotFoundException("Order not found with id: " + orderId)))
+                .flatMap(order -> {
+                    if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+                        return Mono.error(new OrderAlreadyCancelledException("Order already cancelled: " + orderId));
+                    }
+                    order.setOrderStatus(OrderStatus.CANCELLED);
+                    return orderRepository.save(order);
+                })
+                .flatMap(cancelledOrder -> orderItemRepository.findByOrderId(orderId).collectList()
+                        .map(orderItems -> {
+                            OrderCreateRequest cancelledOrderRequest = new OrderCreateRequest();
+                            cancelledOrderRequest.setOrder(cancelledOrder.toRequest());
+                            cancelledOrderRequest.setProducts(orderItems.stream()
+                                    .map(OrderItem::toRequest)
+                                    .collect(Collectors.toList()));
+                            return cancelledOrderRequest;
+                        })
+                )
+                .doOnSuccess(cancelledOrderRequest -> {
+                    OrderEvent orderEvent = new OrderEvent(
+                            cancelledOrderRequest.getOrder().toEvent(),
+                            cancelledOrderRequest.getProducts().stream()
+                                    .map(OrderItemRequest::toEvent)
+                                    .toList()
+                    );
+
+                    SagaEvent event = new SagaEvent(UUID.randomUUID().toString(),
+                            "Order cancelled, processing refund",
+                            SagaEventType.ORDER_CANCELLED, orderEvent);
+
+                    String strEvent = objectConverter.convertObjectToString(event);
+
+                    log.info("Sending ORDER_CANCELLED event :: {}", strEvent);
+
+                    kafkaTemplate.send(sagaTopic, strEvent);
+                });
+    }
+
     public Mono<Order> updateOrderStatusAmountAndPrice(SagaEvent event) {
 
-        org.example.common.Order orderEvent = event.getOrderRequest().getOrder();
+        org.example.common.saga.Order orderEvent = event.getOrderRequest().getOrder();
 
         return orderRepository.findById(orderEvent.getId())
                 .flatMap(order -> {

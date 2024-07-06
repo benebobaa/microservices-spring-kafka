@@ -1,21 +1,17 @@
-package org.example.common;
+package org.example.common.product;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Data
-public class OrderItem {
-
-    private Long id;
+public class ProductRequest {
 
     private Long productId;
 
-    private float price;
-
     private Integer quantity;
 
-    private Long orderId;
+    private float price;
 }

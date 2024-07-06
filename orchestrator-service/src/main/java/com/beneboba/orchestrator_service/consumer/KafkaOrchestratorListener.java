@@ -5,7 +5,7 @@ import com.beneboba.orchestrator_service.service.OrchestratorService;
 import com.beneboba.orchestrator_service.util.ObjectConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.SagaEvent;
+import org.example.common.saga.SagaEvent;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -61,7 +61,7 @@ public class KafkaOrchestratorListener {
         SagaEvent event = objectConverter.
                 convertStringToObject(sagaEvent, SagaEvent.class);
 
-        orchestratorService.startProcessOrder(event)
+        orchestratorService.processEvent(event)
                 .subscribe();
     }
 }

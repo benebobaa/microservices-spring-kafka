@@ -2,25 +2,21 @@ package com.beneboba.orchestrator_service.service;
 
 import com.beneboba.orchestrator_service.client.PaymentClient;
 import com.beneboba.orchestrator_service.client.ProductClient;
-import com.beneboba.orchestrator_service.dto.payment.PaymentStatus;
-import com.beneboba.orchestrator_service.dto.payment.TransactionRequest;
-import com.beneboba.orchestrator_service.dto.payment.TransactionResponse;
-import com.beneboba.orchestrator_service.dto.product.ProductRequest;
-import com.beneboba.orchestrator_service.dto.product.ProductsRequest;
-import com.beneboba.orchestrator_service.dto.product.ProductsResponse;
 import com.beneboba.orchestrator_service.util.ObjectConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.OrderStatus;
-import org.example.common.SagaEvent;
-import org.example.common.SagaEventType;
+import org.example.common.payment.PaymentStatus;
+import org.example.common.payment.TransactionRefundRequest;
+import org.example.common.payment.TransactionRequest;
+import org.example.common.product.ProductRequest;
+import org.example.common.product.ProductsRequest;
+import org.example.common.product.ProductsResponse;
+import org.example.common.saga.SagaEvent;
+import org.example.common.saga.SagaEventType;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,14 +26,24 @@ import java.util.stream.Collectors;
 public class OrchestratorService {
 
     private final ProductClient productClient;
-
     private final PaymentClient paymentClient;
-
     private final KafkaTemplate<String, String> kafkaTemplate;
-
     private final ObjectConverter objectConverter;
 
-    public Mono<Void> startProcessOrder(SagaEvent event) {
+    public Mono<Void> processEvent(SagaEvent event) {
+        log.info("Processing event :: {}", event);
+
+        return switch (event.getType()) {
+            case ORDER_CREATED -> startProcessOrder(event);
+            case ORDER_CANCELLED -> cancelOrder(event);
+            default -> {
+                log.error("Unsupported event type: {}", event.getType());
+                yield Mono.error(new UnsupportedOperationException("Unsupported event type"));
+            }
+        };
+    }
+
+    private Mono<Void> startProcessOrder(SagaEvent event) {
         log.info("startProcessOrder :: {}", event);
 
         List<ProductRequest> productRequests = event.getOrderRequest().getProducts().stream()
@@ -52,20 +58,21 @@ public class OrchestratorService {
                     log.info("Products response :: {}", productsResponse);
                     event.getOrderRequest().getOrder()
                             .setTotalAmount(productsResponse.getTotalAmount());
-                    productsResponse.getProducts().forEach(
-                            product -> {
-                                event.getOrderRequest().getProducts().forEach(item -> {
-                                    if (product.getProductId().equals(item.getProductId())) {
-                                        item.setPrice(product.getPrice());
-                                    }
-                                });
-                            }
-                    );
+                    updateProductPrices(event, productsResponse);
 
                     return processPayment(event, productsResponse);
                 })
                 .onErrorResume(e -> handleError(event, e, false))
                 .then();
+    }
+
+    private Mono<Void> cancelOrder(SagaEvent event) {
+        log.info("cancelOrder :: {}", event);
+
+        return releaseProducts(event)
+                .then(refundPayment(event))
+                .then(sendOrderStatusUpdate(event, SagaEventType.SAGA_COMPLETED))
+                .onErrorResume(e -> handleError(event, e, false));
     }
 
     private Mono<Void> processPayment(SagaEvent event, ProductsResponse productsResponse) {
@@ -76,16 +83,29 @@ public class OrchestratorService {
                 .flatMap(paymentResponse -> {
                     if (paymentResponse.getStatus().equals(PaymentStatus.COMPLETED)) {
                         log.info("Payment success response :: {}", paymentResponse);
-                        return sendOrderStatusUpdate(
-                                event,
-                                SagaEventType.SAGA_COMPLETED
-                        );
+                        return sendOrderStatusUpdate(event, SagaEventType.SAGA_COMPLETED);
                     } else {
                         log.error("Payment failed response :: {}", paymentResponse);
                         return handleError(event, new RuntimeException("Payment failed"), true);
                     }
                 })
                 .onErrorResume(e -> handleError(event, e, true));
+    }
+
+    private Mono<Void> refundPayment(SagaEvent event) {
+        TransactionRefundRequest refundRequest = createRefundRequest(event);
+        log.info("Refunding payment :: {}", refundRequest);
+
+        return paymentClient.refundPayment(refundRequest)
+                .flatMap(refundResponse -> {
+                    if (refundResponse.getStatus().equals(PaymentStatus.REFUNDED)) {
+                        log.info("Refund success response :: {}", refundResponse);
+                        return Mono.empty();
+                    } else {
+                        log.error("Refund failed response :: {}", refundResponse);
+                        return Mono.error(new RuntimeException("Refund failed"));
+                    }
+                });
     }
 
     private Mono<Void> handleError(SagaEvent event, Throwable error, boolean needRollbackProduct) {
@@ -128,6 +148,23 @@ public class OrchestratorService {
                 event.getOrderRequest().getOrder().getCustomerId(),
                 productsResponse.getTotalAmount(),
                 event.getOrderRequest().getOrder().getPaymentMethod()
+        );
+    }
+
+    private TransactionRefundRequest createRefundRequest(SagaEvent event) {
+        return new TransactionRefundRequest(
+                event.getOrderRequest().getOrder().getId(),
+                event.getOrderRequest().getOrder().getCustomerId()
+        );
+    }
+
+    private void updateProductPrices(SagaEvent event, ProductsResponse productsResponse) {
+        productsResponse.getProducts().forEach(
+                product -> event.getOrderRequest().getProducts().forEach(item -> {
+                    if (product.getProductId().equals(item.getProductId())) {
+                        item.setPrice(product.getPrice());
+                    }
+                })
         );
     }
 }

@@ -1,4 +1,4 @@
-package org.example.common;
+package org.example.common.saga;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,11 +7,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class SagaResult {
+public class SagaEvent {
 
     private String sagaId;
 
-    private Long OrderId;
+    private String message;
 
     private SagaEventType type;
+
+    private OrderEvent orderRequest;
 }

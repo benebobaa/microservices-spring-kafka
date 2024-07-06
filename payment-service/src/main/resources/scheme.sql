@@ -19,5 +19,5 @@ CREATE TABLE IF NOT EXISTS
                          balance DECIMAL(10, 2) NOT NULL
 );
 
-INSERT INTO customer_balance (customer_id, balance) VALUES (1, 1000000.00);
+INSERT INTO customer_balance (customer_id, balance) VALUES (1, 10000.00);
 INSERT INTO customer_balance (customer_id, balance) VALUES (2, 0.00);

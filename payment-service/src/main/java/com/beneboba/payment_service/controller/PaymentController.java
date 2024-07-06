@@ -2,10 +2,11 @@ package com.beneboba.payment_service.controller;
 
 import com.beneboba.payment_service.entity.Balance;
 import com.beneboba.payment_service.entity.Transaction;
-import com.beneboba.payment_service.model.TransactionRequest;
 import com.beneboba.payment_service.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.common.payment.TransactionRefundRequest;
+import org.example.common.payment.TransactionRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -31,14 +32,6 @@ public class PaymentController {
         return paymentService.getAllCustomerBalance();
     }
 
-    @PostMapping("/balance")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<Balance> addBalance(
-            @RequestBody Balance balance
-            ) {
-        return paymentService.createNewBalance(balance);
-    }
-
     @PostMapping("/create")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<Transaction> createTransaction(
@@ -46,5 +39,14 @@ public class PaymentController {
     ) {
         log.info("Create transaction :: {}", request);
         return paymentService.createNewTransaction(request);
+    }
+
+    @PatchMapping("/refund")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<Transaction> refundTransaction(
+            @RequestBody TransactionRefundRequest request
+    ) {
+        log.info("Refund transaction :: {}", request);
+        return paymentService.refundTransaction(request);
     }
 }

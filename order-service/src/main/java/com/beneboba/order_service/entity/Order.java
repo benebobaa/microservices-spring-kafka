@@ -1,5 +1,6 @@
 package com.beneboba.order_service.entity;
 
+import com.beneboba.order_service.model.OrderRequest;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -34,4 +35,17 @@ public class Order {
     @CreatedDate
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate orderDate;
+
+    public OrderRequest toRequest(){
+        return new OrderRequest(
+                this.id,
+                this.customerId,
+                this.billingAddress,
+                this.shippingAddress,
+                this.orderStatus,
+                this.totalAmount,
+                this.paymentMethod,
+                this.orderDate
+        );
+    }
 }

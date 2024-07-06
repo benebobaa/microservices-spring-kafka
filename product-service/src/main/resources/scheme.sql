@@ -14,5 +14,6 @@ CREATE TABLE IF NOT EXISTS
 );
 
 INSERT INTO products (name, price, category, description, image_url, stock_quantity)
-VALUES ('Product 1', 100.00, 'Category 1', 'Description 1', 'https://via.placeholder.com/150', 10),
-       ('Product 2', 200.00, 'Category 2', 'Description 2', 'https://via.placeholder.com/150', 20);
+VALUES ('Ketoprak', 100.00, 'Category 1', 'Description 1', 'https://via.placeholder.com/150', 20),
+       ('Nasi Goreng', 200.00, 'Category 2', 'Description 2', 'https://via.placeholder.com/150', 20),
+       ('Nasi Uduk', 300.00, 'Category 2', 'Description 3', 'https://via.placeholder.com/150', 20);

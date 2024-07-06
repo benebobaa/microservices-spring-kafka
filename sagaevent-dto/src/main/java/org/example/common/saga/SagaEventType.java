@@ -1,7 +1,8 @@
-package org.example.common;
+package org.example.common.saga;
 
 public enum SagaEventType {
     ORDER_CREATED,
+    ORDER_CANCELLED,
     PRODUCT_RESERVED,
     PRODUCT_RESERVATION_FAILED,
     PAYMENT_PROCESSED,

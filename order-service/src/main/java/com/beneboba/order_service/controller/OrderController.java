@@ -29,6 +29,12 @@ public class OrderController {
         return orderService.createOrder(order);
     }
 
+    @PatchMapping("/{orderId}")
+    @ResponseStatus(HttpStatus.OK)
+    public Mono<OrderCreateRequest> cancelOrder(@PathVariable Long orderId) {
+        return orderService.cancelOrderAndRefund(orderId);
+    }
+
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public Mono<Void> deleteAll(){

@@ -5,8 +5,8 @@ import com.beneboba.product_service.service.ProductService;
 import com.beneboba.product_service.util.ObjectConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.OrderEvent;
-import org.example.common.SagaEvent;
+import org.example.common.saga.OrderEvent;
+import org.example.common.saga.SagaEvent;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 

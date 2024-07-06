@@ -1,5 +1,7 @@
 package com.beneboba.order_service.entity;
 
+import com.beneboba.order_service.model.OrderItemRequest;
+import com.beneboba.order_service.model.OrderRequest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -24,4 +26,14 @@ public class OrderItem {
     private Integer quantity;
 
     private Long orderId;
+
+    public OrderItemRequest toRequest(){
+        return new OrderItemRequest(
+                this.id,
+                this.productId,
+                this.price,
+                this.quantity,
+                this.orderId
+        );
+    }
 }
