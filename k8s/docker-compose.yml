@@ -1,54 +1,51 @@
-version: '3.8'
+version: '3.9'
 
 services:
-  zookeeper:
-    image: wurstmeister/zookeeper:latest
-    ports:
-      - "2181:2181"
-
-  kafka:
-    image: wurstmeister/kafka:latest
-    ports:
-      - "9092:9092"
-    expose:
-      - "9093"
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "my-topic:1:1"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+  # zookeeper:
+  #   image: wurstmeister/zookeeper:latest
+  #   ports:
+  #     - "2181:2181"
+  #
+  # kafka:
+  #   image: wurstmeister/kafka:latest
+  #   ports:
+  #     - "9092:9092"
+  #   expose:
+  #     - "9093"
+  #   environment:
+  #     KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+  #     KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #     KAFKA_CREATE_TOPICS: "my-topic:1:1"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
 
   global-postgres:
-    build:
-      context: .
-      dockerfile: Dockerfile.global-postgres
+    image: postgres:16-alpine
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: default
+      POSTGRES_DB: orderdb
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
-
-  # order-service:
+  
+  order-service:
+    build:
+      context: .././order-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    depends_on:
+      - global-postgres
+  #
+  # # orchestrator-service:
   #   build:
-  #     context: .././order-service
+  #     context: .././orchestrator-service
   #     dockerfile: Dockerfile
   #   ports:
-  #     - "8082:8082"
+  #     - "8080:8080"
   #   depends_on:
   #     - kafka
   #     - global-postgres
-
-  orchestrator-service:
-    build:
-      context: .././orchestrator-service
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    depends_on:
-      - kafka
-      - global-postgres

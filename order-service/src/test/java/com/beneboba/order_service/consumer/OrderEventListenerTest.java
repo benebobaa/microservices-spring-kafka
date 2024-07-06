@@ -6,10 +6,8 @@ import static org.mockito.Mockito.*;
 
 import com.beneboba.order_service.service.OrderService;
 import com.beneboba.order_service.util.ObjectConverter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.example.common.*;
-import org.junit.jupiter.api.BeforeEach;
+import org.example.common.saga.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,10 +19,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.util.StreamUtils;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Arrays;
 
@@ -97,7 +92,7 @@ public class OrderEventListenerTest {
          product2.setOrderId(1L);
 
          // Create Order object
-         Order order = new org.example.common.Order();
+         Order order = new org.example.common.saga.Order();
          order.setId(1L);
          order.setCustomerId(2L);
          order.setBillingAddress("bene");

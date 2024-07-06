@@ -1,6 +1,9 @@
 package com.beneboba.order_service.controller;
 
 import com.beneboba.order_service.exception.ErrorResponse;
+import com.beneboba.order_service.exception.OrderAlreadyCancelledException;
+import com.beneboba.order_service.exception.OrderIncompleted;
+import com.beneboba.order_service.exception.OrderNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,6 +62,51 @@ class ErrorControllerTest {
                 });
     }
 
+    @Test
+    void handleOrderNotFoundException() {
+        when(testController.throwOrderNotFoundException()).thenReturn(Mono.error(new OrderNotFoundException("Order not found")));
+
+        webTestClient.get()
+                .uri("/test/order-not-found")
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.BAD_REQUEST)
+                .expectBody(ErrorResponse.class)
+                .value(errorResponse -> {
+                    assert errorResponse.getMessage().equals("Order not found");
+                    assert errorResponse.getStatusCode() == HttpStatus.BAD_REQUEST.value();
+                });
+    }
+
+    @Test
+    void handleOrderAlreadyCancelledException() {
+        when(testController.throwOrderAlreadyCancelledException()).thenReturn(Mono.error(new OrderAlreadyCancelledException("Order already cancelled")));
+
+        webTestClient.get()
+                .uri("/test/order-already-cancelled")
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.BAD_REQUEST)
+                .expectBody(ErrorResponse.class)
+                .value(errorResponse -> {
+                    assert errorResponse.getMessage().equals("Order already cancelled");
+                    assert errorResponse.getStatusCode() == HttpStatus.BAD_REQUEST.value();
+                });
+    }
+
+    @Test
+    void handleOrderIncompletedException() {
+        when(testController.throwOrderIncompletedException()).thenReturn(Mono.error(new OrderIncompleted("Order not yet completed")));
+
+        webTestClient.get()
+                .uri("/test/order-incompleted")
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.BAD_REQUEST)
+                .expectBody(ErrorResponse.class)
+                .value(errorResponse -> {
+                    assert errorResponse.getMessage().equals("Order not yet completed");
+                    assert errorResponse.getStatusCode() == HttpStatus.BAD_REQUEST.value();
+                });
+    }
+
     @RestController
     static class TestController {
         @GetMapping("/test/exception")
@@ -69,6 +117,21 @@ class ErrorControllerTest {
         @GetMapping("/test/constraint-violation")
         public Mono<Void> throwConstraintViolationException() {
             return Mono.error(new ConstraintViolationException("Constraint violation", null));
+        }
+
+        @GetMapping("/test/order-not-found")
+        public Mono<Void> throwOrderNotFoundException() {
+            return Mono.error(new OrderNotFoundException("Order not found"));
+        }
+
+        @GetMapping("/test/order-already-cancelled")
+        public Mono<Void> throwOrderAlreadyCancelledException() {
+            return Mono.error(new OrderAlreadyCancelledException("Order already cancelled"));
+        }
+
+        @GetMapping("/test/order-incompleted")
+        public Mono<Void> throwOrderIncompletedException() {
+            return Mono.error(new OrderIncompleted("Order not yet completed"));
         }
     }
 }

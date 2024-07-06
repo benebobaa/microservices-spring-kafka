@@ -3,6 +3,7 @@ package com.beneboba.order_service.service;
 import com.beneboba.order_service.entity.Order;
 import com.beneboba.order_service.entity.OrderItem;
 import com.beneboba.order_service.exception.OrderAlreadyCancelledException;
+import com.beneboba.order_service.exception.OrderIncompleted;
 import com.beneboba.order_service.exception.OrderNotFoundException;
 import com.beneboba.order_service.model.OrderCreateRequest;
 import com.beneboba.order_service.model.OrderItemRequest;
@@ -49,7 +50,7 @@ public class OrderService {
     @Transactional
     public Mono<OrderCreateRequest> createOrder(OrderCreateRequest request) {
 
-        request.getOrder().setOrderStatus(OrderStatus.PROCESSING);
+        request.getOrder().setOrderStatus(OrderStatus.CREATED);
 
         return validationService.validate(request)
                 .flatMap(valid -> orderRepository.save(request.getOrder().toEntity()))
@@ -95,6 +96,9 @@ public class OrderService {
                 .flatMap(order -> {
                     if (order.getOrderStatus() == OrderStatus.CANCELLED) {
                         return Mono.error(new OrderAlreadyCancelledException("Order already cancelled: " + orderId));
+                    }
+                    if (order.getOrderStatus() == OrderStatus.CREATED) {
+                        return Mono.error(new OrderIncompleted("Cannot cancel and refund an incomplete order: " + orderId));
                     }
                     order.setOrderStatus(OrderStatus.CANCELLED);
                     return orderRepository.save(order);

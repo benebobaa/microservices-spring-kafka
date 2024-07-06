@@ -105,6 +105,31 @@ class OrderControllerTest {
         verify(orderService, times(1)).deleteAllOrders();
     }
 
+    @Test
+    void cancelOrder_ShouldCancelAndReturnOrder() {
+        Long orderId = 1L;
+        OrderCreateRequest expectedResponse = createSampleOrder(orderId);
+
+        when(orderService.cancelOrderAndRefund(orderId)).thenReturn(Mono.just(expectedResponse));
+
+        webTestClient.patch()
+                .uri("/api/orders/{orderId}", orderId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(OrderCreateRequest.class)
+                .value(response -> {
+                    assertThat(response.getOrder().getCustomerId()).isEqualTo(expectedResponse.getOrder().getCustomerId());
+                    assertThat(response.getOrder().getBillingAddress()).isEqualTo(expectedResponse.getOrder().getBillingAddress());
+                    assertThat(response.getOrder().getShippingAddress()).isEqualTo(expectedResponse.getOrder().getShippingAddress());
+                    assertThat(response.getOrder().getPaymentMethod()).isEqualTo(expectedResponse.getOrder().getPaymentMethod());
+                    assertThat(response.getProducts().getFirst().getProductId()).isEqualTo(expectedResponse.getProducts().getFirst().getProductId());
+                    assertThat(response.getProducts().getFirst().getQuantity()).isEqualTo(expectedResponse.getProducts().getFirst().getQuantity());
+                });
+
+        verify(orderService, times(1)).cancelOrderAndRefund(orderId);
+    }
+
+
     private OrderCreateRequest createSampleOrder(Long id) {
         OrderRequest orderRequest = new OrderRequest();
         orderRequest.setId(id);

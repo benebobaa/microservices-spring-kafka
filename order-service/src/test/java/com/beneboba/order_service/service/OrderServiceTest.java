@@ -3,6 +3,9 @@ package com.beneboba.order_service.service;
 import com.beneboba.order_service.entity.Order;
 import com.beneboba.order_service.entity.OrderItem;
 import com.beneboba.order_service.entity.OrderStatus;
+import com.beneboba.order_service.exception.OrderAlreadyCancelledException;
+import com.beneboba.order_service.exception.OrderIncompleted;
+import com.beneboba.order_service.exception.OrderNotFoundException;
 import com.beneboba.order_service.model.OrderCreateRequest;
 import com.beneboba.order_service.model.OrderItemRequest;
 import com.beneboba.order_service.model.OrderRequest;
@@ -10,9 +13,9 @@ import com.beneboba.order_service.repository.OrderItemRepository;
 import com.beneboba.order_service.repository.OrderRepository;
 import com.beneboba.order_service.util.ObjectConverter;
 import com.beneboba.order_service.util.ValidationService;
-import org.example.common.OrderEvent;
-import org.example.common.SagaEvent;
-import org.example.common.SagaEventType;
+import org.example.common.saga.OrderEvent;
+import org.example.common.saga.SagaEvent;
+import org.example.common.saga.SagaEventType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -29,6 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
@@ -78,7 +82,7 @@ class OrderServiceTest {
         StepVerifier.create(result)
                 .expectNextMatches(savedRequest -> {
                     assertNotNull(savedRequest.getOrder().getId());
-                    assertEquals(OrderStatus.PROCESSING, savedRequest.getOrder().getOrderStatus());
+                    assertEquals(OrderStatus.CREATED, savedRequest.getOrder().getOrderStatus());
                     return true;
                 })
                 .verifyComplete();
@@ -131,6 +135,80 @@ class OrderServiceTest {
     }
 
     @Test
+    void testCancelOrderAndRefund_ShouldCancelOrder() {
+        Long orderId = 1L;
+        Order order = createSampleOrder(orderId);
+        order.setOrderStatus(OrderStatus.COMPLETED);
+        List<OrderItem> orderItems = createSampleOrderItems();
+
+        when(orderRepository.findById(orderId)).thenReturn(Mono.just(order));
+        when(orderRepository.save(any(Order.class))).thenReturn(Mono.just(order));
+        when(orderItemRepository.findByOrderId(orderId)).thenReturn(Flux.fromIterable(orderItems));
+        when(objectConverter.convertObjectToString(any(SagaEvent.class))).thenReturn("event-string");
+
+        StepVerifier.create(orderService.cancelOrderAndRefund(orderId))
+                .expectNextMatches(response -> {
+                    assertThat(response.getOrder().getId()).isEqualTo(orderId);
+                    assertThat(response.getOrder().getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+                    assertThat(response.getProducts().size()).isEqualTo(orderItems.size());
+                    return true;
+                })
+                .verifyComplete();
+
+        verify(orderRepository).save(argThat(savedOrder -> savedOrder.getOrderStatus() == OrderStatus.CANCELLED));
+        verify(kafkaTemplate).send(eq("test-saga-topic"), anyString());
+    }
+
+    @Test
+    void testCancelOrderAndRefund_OrderNotFound() {
+        Long orderId = 1L;
+
+        when(orderRepository.findById(orderId)).thenReturn(Mono.empty());
+
+        StepVerifier.create(orderService.cancelOrderAndRefund(orderId))
+                .expectErrorMatches(throwable -> throwable instanceof OrderNotFoundException &&
+                        throwable.getMessage().equals("Order not found with id: " + orderId))
+                .verify();
+
+        verify(orderRepository, never()).save(any());
+        verify(kafkaTemplate, never()).send(anyString(), anyString());
+    }
+
+    @Test
+    void testCancelOrderAndRefund_OrderAlreadyCancelled() {
+        Long orderId = 1L;
+        Order order = createSampleOrder(orderId);
+        order.setOrderStatus(OrderStatus.CANCELLED);
+
+        when(orderRepository.findById(orderId)).thenReturn(Mono.just(order));
+
+        StepVerifier.create(orderService.cancelOrderAndRefund(orderId))
+                .expectErrorMatches(throwable -> throwable instanceof OrderAlreadyCancelledException &&
+                        throwable.getMessage().equals("Order already cancelled: " + orderId))
+                .verify();
+
+        verify(orderRepository, never()).save(any());
+        verify(kafkaTemplate, never()).send(anyString(), anyString());
+    }
+
+    @Test
+    void testCancelOrderAndRefund_OrderIncompleted() {
+        Long orderId = 1L;
+        Order order = createSampleOrder(orderId);
+        order.setOrderStatus(OrderStatus.CREATED); // Incomplete status
+
+        when(orderRepository.findById(orderId)).thenReturn(Mono.just(order));
+
+        StepVerifier.create(orderService.cancelOrderAndRefund(orderId))
+                .expectErrorMatches(throwable -> throwable instanceof OrderIncompleted &&
+                        throwable.getMessage().equals("Cannot cancel and refund an incomplete order: " + orderId))
+                .verify();
+
+        verify(orderRepository, never()).save(any());
+        verify(kafkaTemplate, never()).send(anyString(), anyString());
+    }
+
+    @Test
     void testDeleteAllOrders() {
         when(orderRepository.deleteAll()).thenReturn(Mono.empty());
 
@@ -142,7 +220,7 @@ class OrderServiceTest {
 
     private OrderCreateRequest createSampleOrderCreateRequest() {
         OrderRequest orderRequest = new OrderRequest(null, 1L, "Billing Address", "Shipping Address",
-                OrderStatus.PROCESSING, 100.0f, "Credit Card", null);
+                OrderStatus.CREATED, 100.0f, "Credit Card", null);
         List<OrderItemRequest> orderItems = Arrays.asList(
                 new OrderItemRequest(null, 1L, 50.0f, 1, null),
                 new OrderItemRequest(null, 2L, 50.0f, 1, null)
@@ -151,12 +229,12 @@ class OrderServiceTest {
     }
 
     private SagaEvent createSampleSagaEvent() {
-        org.example.common.Order orderEvent = new org.example.common.Order();
+        org.example.common.saga.Order orderEvent = new org.example.common.saga.Order();
         orderEvent.setId(1L);
         orderEvent.setTotalAmount(100.0f);
-        List<org.example.common.OrderItem> products = Arrays.asList(
-                new org.example.common.OrderItem(1L, 1L, 50.0f, 1, 1L),
-                new org.example.common.OrderItem(2L, 2L,50.0f, 1, 1L)
+        List<org.example.common.saga.OrderItem> products = Arrays.asList(
+                new org.example.common.saga.OrderItem(1L, 1L, 50.0f, 1, 1L),
+                new org.example.common.saga.OrderItem(2L, 2L,50.0f, 1, 1L)
         );
         OrderEvent orderEventWrapper = new OrderEvent(orderEvent, products);
         return new SagaEvent(UUID.randomUUID().toString(), "Test event", SagaEventType.ORDER_CREATED, orderEventWrapper);
@@ -168,7 +246,7 @@ class OrderServiceTest {
         order.setCustomerId(1L);
         order.setBillingAddress("Billing Address");
         order.setShippingAddress("Shipping Address");
-        order.setOrderStatus(OrderStatus.PROCESSING);
+        order.setOrderStatus(OrderStatus.CREATED);
         order.setTotalAmount(100f);
         order.setPaymentMethod("Credit Card");
         order.setOrderDate(LocalDate.from(LocalDateTime.now()));

@@ -3,6 +3,7 @@ package com.beneboba.order_service.controller;
 
 import com.beneboba.order_service.exception.ErrorResponse;
 import com.beneboba.order_service.exception.OrderAlreadyCancelledException;
+import com.beneboba.order_service.exception.OrderIncompleted;
 import com.beneboba.order_service.exception.OrderNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +29,11 @@ public class ErrorController {
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler({OrderNotFoundException.class, OrderAlreadyCancelledException.class})
+    @ExceptionHandler({
+            OrderNotFoundException.class,
+            OrderAlreadyCancelledException.class,
+            OrderIncompleted.class
+    })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handleConstraintViolationException(RuntimeException ex) {
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);
