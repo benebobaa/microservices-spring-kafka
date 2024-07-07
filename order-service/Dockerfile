@@ -5,6 +5,7 @@ COPY pom-docker.xml pom.xml
 COPY settings.xml /usr/share/maven/ref/
 COPY src ./src
 COPY sagaevent-dto-1.0-SNAPSHOT.jar .
+COPY .env .env
 
 RUN mvn clean
 

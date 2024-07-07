@@ -1,0 +1,35 @@
+
+
+### Reserve Product
+POST http://localhost:8081/api/products/reserve
+Content-Type: application/json
+
+{
+  "products": [
+    {
+      "productId": 1,
+      "quantity": 1
+    },
+    {
+      "productId": 2,
+      "quantity": 1
+    }
+  ]
+}
+
+### Release Products
+PATCH http://localhost:8081/api/products/release
+Content-Type: application/json
+
+{
+  "products": [
+    {
+      "productId": 1,
+      "quantity": 1
+    },
+    {
+      "productId": 2,
+      "quantity": 1
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package com.beneboba.payment_service.service;
 
+import com.beneboba.payment_service.exception.CustomerIdNotMatchException;
 import com.beneboba.payment_service.exception.CustomerNotFoundException;
 import com.beneboba.payment_service.exception.InsufficientFundsException;
 import com.beneboba.payment_service.entity.Balance;
@@ -25,6 +26,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -62,7 +64,7 @@ public class PaymentService {
                 .flatMap(savedBalance -> {
 //                    Transaction transaction = request.toEntity();
                     Transaction transaction = new Transaction(
-                            null, request.getOrderId(), request.getAmount(),
+                            null, request.getOrderId(), request.getCustomerId(), request.getAmount(),
                             Helper.classifyPaymentMethod(request.getPaymentMethod()),
                             PaymentStatus.COMPLETED, Helper.generateReferenceNumber(), null
                     );
@@ -80,6 +82,12 @@ public class PaymentService {
                 .flatMap(transaction -> balanceRepository.findByCustomerId(request.getCustomerId())
                         .switchIfEmpty(Mono.error(new CustomerNotFoundException("Customer not found")))
                         .flatMap(balance -> {
+                            if (!Objects.equals(transaction.getCustomerId(), balance.getCustomerId())){
+                                log.error("Customer id not match :: transaction.customerId: {}, balance.customerId: {}",
+                                        transaction.getCustomerId(), balance.getCustomerId());
+                                return Mono.error(new CustomerIdNotMatchException("Customer id not match"));
+                            }
+
                             balance.setBalance(balance.getBalance() + (transaction.getAmount()));
                             return balanceRepository.save(balance)
                                     .thenReturn(transaction);

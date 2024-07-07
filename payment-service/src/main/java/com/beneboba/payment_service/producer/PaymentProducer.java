@@ -54,6 +54,7 @@ public class PaymentProducer {
                     Transaction transaction = new Transaction();
                     Order order = event.getOrderRequest().getOrder();
                     transaction.setOrderId(order.getId());
+                    transaction.setCustomerId(order.getCustomerId());
                     transaction.setAmount(order.getTotalAmount());
                     transaction.setMode(Helper.classifyPaymentMethod(order.getPaymentMethod()));
                     transaction.setStatus(PaymentStatus.COMPLETED);

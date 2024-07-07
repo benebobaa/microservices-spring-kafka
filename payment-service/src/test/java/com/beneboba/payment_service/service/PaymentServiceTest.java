@@ -3,14 +3,15 @@ package com.beneboba.payment_service.service;
 import com.beneboba.payment_service.entity.Balance;
 import com.beneboba.payment_service.entity.PaymentStatus;
 import com.beneboba.payment_service.entity.Transaction;
+import com.beneboba.payment_service.exception.CustomerIdNotMatchException;
 import com.beneboba.payment_service.exception.CustomerNotFoundException;
 import com.beneboba.payment_service.exception.InsufficientFundsException;
 import com.beneboba.payment_service.exception.TransactionNotFoundException;
-import com.beneboba.payment_service.model.TransactionRefundRequest;
-import com.beneboba.payment_service.model.TransactionRequest;
 import com.beneboba.payment_service.repository.BalanceRepository;
 import com.beneboba.payment_service.repository.TransactionRepository;
 import com.beneboba.payment_service.util.ValidationService;
+import org.example.common.payment.TransactionRefundRequest;
+import org.example.common.payment.TransactionRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -25,7 +26,6 @@ import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-
 public class PaymentServiceTest {
 
     @Mock
@@ -146,6 +146,8 @@ public class PaymentServiceTest {
 
     @Test
     public void testRefundTransaction() {
+        transaction.setCustomerId(validTransactionRefundRequest.getCustomerId());
+
         when(validationService.validate(any(TransactionRefundRequest.class))).thenReturn(Mono.just(validTransactionRefundRequest));
         when(transactionRepository.findByOrderId(validTransactionRefundRequest.getOrderId())).thenReturn(Mono.just(transaction));
         when(balanceRepository.findByCustomerId(validTransactionRefundRequest.getCustomerId())).thenReturn(Mono.just(customerBalance));
@@ -162,6 +164,7 @@ public class PaymentServiceTest {
         verify(balanceRepository, times(1)).save(customerBalance);
         verify(transactionRepository, times(1)).save(any(Transaction.class));
     }
+
 
     @Test
     public void testRefundTransactionTransactionNotFound() {
@@ -187,6 +190,24 @@ public class PaymentServiceTest {
 
         StepVerifier.create(paymentService.refundTransaction(validTransactionRefundRequest))
                 .expectError(CustomerNotFoundException.class)
+                .verify();
+
+        verify(validationService, times(1)).validate(validTransactionRefundRequest);
+        verify(transactionRepository, times(1)).findByOrderId(validTransactionRefundRequest.getOrderId());
+        verify(balanceRepository, times(1)).findByCustomerId(validTransactionRefundRequest.getCustomerId());
+        verify(balanceRepository, never()).save(any(Balance.class));
+        verify(transactionRepository, never()).save(any(Transaction.class));
+    }
+
+    @Test
+    public void testRefundTransactionCustomerIdNotMatch() {
+        customerBalance.setCustomerId(2L); // mismatch customer ID
+        when(validationService.validate(any(TransactionRefundRequest.class))).thenReturn(Mono.just(validTransactionRefundRequest));
+        when(transactionRepository.findByOrderId(validTransactionRefundRequest.getOrderId())).thenReturn(Mono.just(transaction));
+        when(balanceRepository.findByCustomerId(validTransactionRefundRequest.getCustomerId())).thenReturn(Mono.just(customerBalance));
+
+        StepVerifier.create(paymentService.refundTransaction(validTransactionRefundRequest))
+                .expectError(CustomerIdNotMatchException.class)
                 .verify();
 
         verify(validationService, times(1)).validate(validTransactionRefundRequest);

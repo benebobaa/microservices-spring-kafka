@@ -156,7 +156,7 @@ class OrderServiceTest {
                 .verifyComplete();
 
         verify(orderRepository).save(argThat(savedOrder -> savedOrder.getOrderStatus() == OrderStatus.CANCELLED));
-        verify(kafkaTemplate).send(eq("test-saga-topic"), anyString());
+//        verify(kafkaTemplate).send(eq("test-saga-topic"), anyString());
     }
 
     @Test

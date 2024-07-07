@@ -1,10 +1,7 @@
 package com.beneboba.payment_service.controller;
 
 import com.beneboba.payment_service.controller.ErrorController;
-import com.beneboba.payment_service.exception.CustomerNotFoundException;
-import com.beneboba.payment_service.exception.ErrorResponse;
-import com.beneboba.payment_service.exception.InsufficientFundsException;
-import com.beneboba.payment_service.exception.TransactionNotFoundException;
+import com.beneboba.payment_service.exception.*;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -108,6 +105,21 @@ class ErrorControllerTest {
                 });
     }
 
+    @Test
+    void handleCustomerIdNotMatchException() {
+        when(testController.throwCustomerIdNotMatch()).thenReturn(Mono.error(new CustomerIdNotMatchException("Customer id not match")));
+
+        webTestClient.get()
+                .uri("/test/customerid-not-match")
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.BAD_REQUEST)
+                .expectBody(ErrorResponse.class)
+                .value(errorResponse -> {
+                    assert errorResponse.getMessage().equals("Customer id not match");
+                    assert errorResponse.getStatusCode() == HttpStatus.BAD_REQUEST.value();
+                });
+    }
+
     @RestController
     static class TestController {
         @GetMapping("/test/exception")
@@ -133,6 +145,11 @@ class ErrorControllerTest {
         @GetMapping("/test/transaction-not-found")
         public Mono<Void> throwTransactionNotFoundException() {
             return Mono.error(new TransactionNotFoundException("Transaction not found"));
+        }
+
+        @GetMapping("/test/customerid-not-match")
+        public Mono<Void> throwCustomerIdNotMatch() {
+            return Mono.error(new CustomerIdNotMatchException("Customer id not match"));
         }
     }
 }

@@ -1,10 +1,7 @@
 package com.beneboba.payment_service.controller;
 
 
-import com.beneboba.payment_service.exception.CustomerNotFoundException;
-import com.beneboba.payment_service.exception.ErrorResponse;
-import com.beneboba.payment_service.exception.InsufficientFundsException;
-import com.beneboba.payment_service.exception.TransactionNotFoundException;
+import com.beneboba.payment_service.exception.*;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -29,7 +26,8 @@ public class ErrorController {
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler({InsufficientFundsException.class, CustomerNotFoundException.class, TransactionNotFoundException.class})
+    @ExceptionHandler({InsufficientFundsException.class, CustomerNotFoundException.class,
+            CustomerIdNotMatchException.class ,TransactionNotFoundException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handleConstraintViolationException(RuntimeException ex) {
         return new ResponseEntity<>(new ErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST.value()), HttpStatus.BAD_REQUEST);

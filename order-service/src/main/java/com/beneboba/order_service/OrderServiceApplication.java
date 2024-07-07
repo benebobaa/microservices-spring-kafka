@@ -11,7 +11,7 @@ import org.springframework.r2dbc.connection.init.ConnectionFactoryInitializer;
 import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator;
 import org.springframework.web.reactive.config.EnableWebFlux;
 
-@EnableR2dbcAuditing
+//@EnableR2dbcAuditing
 @SpringBootApplication
 public class OrderServiceApplication {
 

@@ -35,6 +35,9 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     @Value("${kafka.saga-topic-webclient.topics}")
+    String sagaWebclientTopic;
+
+    @Value("${kafka.saga-topic.topics}")
     String sagaTopic;
 
     private final OrderRepository orderRepository;
@@ -129,7 +132,7 @@ public class OrderService {
 
                     log.info("Sending ORDER_CANCELLED event :: {}", strEvent);
 
-                    kafkaTemplate.send(sagaTopic, strEvent);
+                    kafkaTemplate.send(sagaWebclientTopic, strEvent);
                 });
     }
 

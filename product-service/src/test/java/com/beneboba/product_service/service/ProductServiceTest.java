@@ -6,7 +6,6 @@ import com.beneboba.product_service.exception.StockNotEnoughException;
 import com.beneboba.product_service.model.ProductRequest;
 import com.beneboba.product_service.model.ProductsRequest;
 import com.beneboba.product_service.repository.ProductRepository;
-import com.beneboba.product_service.service.ProductService;
 import com.beneboba.product_service.util.ValidationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

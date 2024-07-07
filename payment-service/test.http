@@ -1,0 +1,20 @@
+
+### Create Transaction
+POST http://localhost:8081/api/payments/create
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "customerId": 1,
+  "amount": 100,
+  "paymentMethod": "bca"
+}
+
+### Refund Transaction (optional)
+PATCH http://localhost:8081/api/payments/refund
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "customerId": 1
+}

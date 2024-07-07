@@ -15,3 +15,26 @@ Content-Type: application/json
         }
     ]
 }
+
+
+### CREATE ORDER
+POST http://localhost:8082/api/orders
+Content-Type: application/json
+
+{
+  "order": {
+    "customerId": 1,
+    "billingAddress": "string",
+    "shippingAddress": "string",
+    "paymentMethod": "bca" //bca, bni, bri, ovo, gopay, dana
+  },
+  "products": [
+    {
+      "productId": 1,
+      "quantity": 1
+    }
+  ]
+}
+
+### CANCEL ORDER (optional)
+PATCH http://localhost:8082/api/orders/{{orderId}}

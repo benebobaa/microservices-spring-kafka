@@ -28,6 +28,8 @@ public class Transaction {
     @NotNull
     private Long orderId;
 
+    private Long customerId;
+
     @Min(1)
     private float amount;
 
