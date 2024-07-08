@@ -28,27 +28,16 @@ public class KafkaOrchestratorListener {
         log.info("handleSagaEvents :: {}", event);
 
         switch (event.getType()) {
-            case ORDER_CREATED:
-                kafkaOrchestratorProducer.handleOrderCreated(event);
-                break;
-            case PRODUCT_RESERVED:
-                kafkaOrchestratorProducer.handleProductReserved(event);
-                break;
-            case PRODUCT_RESERVATION_FAILED:
-                kafkaOrchestratorProducer.handleProductReservationFailed(event);
-                break;
-            case PAYMENT_PROCESSED:
-                kafkaOrchestratorProducer.handlePaymentProcessed(event);
-                break;
-            case PAYMENT_FAILED:
-                kafkaOrchestratorProducer.handlePaymentFailed(event);
-                break;
-            case PRODUCT_RELEASED:
-                break;
-            default:
-                throw new IllegalStateException("Unexpected event type: " + event.getType());
+            case ORDER_CREATED -> kafkaOrchestratorProducer.handleOrderCreated(event);
+            case PRODUCT_RESERVED -> kafkaOrchestratorProducer.handleProductReserved(event);
+            case PRODUCT_RESERVATION_FAILED -> kafkaOrchestratorProducer.handleProductReservationFailed(event);
+            case PAYMENT_PROCESSED -> kafkaOrchestratorProducer.handlePaymentProcessed(event);
+            case PAYMENT_FAILED -> kafkaOrchestratorProducer.handlePaymentFailed(event);
+            case PRODUCT_RELEASED -> log.info("Products Released");
+            default -> throw new IllegalStateException("Unexpected event type: " + event.getType());
         }
     }
+
 
     @KafkaListener(
             topics = "${kafka.saga-topic-webclient.topics}",

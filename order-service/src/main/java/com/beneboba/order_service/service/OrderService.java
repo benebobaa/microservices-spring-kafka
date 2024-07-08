@@ -92,18 +92,20 @@ public class OrderService {
                 });
     }
 
-    @Transactional
     public Mono<OrderCreateRequest> cancelOrderAndRefund(Long orderId) {
         return orderRepository.findById(orderId)
                 .switchIfEmpty(Mono.error(new OrderNotFoundException("Order not found with id: " + orderId)))
                 .flatMap(order -> {
                     if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+                        log.error("OrderAlreadyCancelledException :: {}", order);
                         return Mono.error(new OrderAlreadyCancelledException("Order already cancelled: " + orderId));
                     }
-                    if (order.getOrderStatus() == OrderStatus.CREATED) {
+                    if (order.getOrderStatus() != OrderStatus.COMPLETED) {
+                        log.error("OrderIncompleted :: {}", order);
                         return Mono.error(new OrderIncompleted("Cannot cancel and refund an incomplete order: " + orderId));
                     }
-                    order.setOrderStatus(OrderStatus.CANCELLED);
+                    order.setOrderStatus(OrderStatus.PROCESSING_CANCEL);
+                    log.info("Order update to :: {}",order);
                     return orderRepository.save(order);
                 })
                 .flatMap(cancelledOrder -> orderItemRepository.findByOrderId(orderId).collectList()

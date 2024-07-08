@@ -26,8 +26,11 @@ import java.util.stream.Collectors;
 public class OrchestratorService {
 
     private final ProductClient productClient;
+
     private final PaymentClient paymentClient;
+
     private final KafkaTemplate<String, String> kafkaTemplate;
+
     private final ObjectConverter objectConverter;
 
     public Mono<Void> processEvent(SagaEvent event) {
@@ -71,7 +74,7 @@ public class OrchestratorService {
 
         return releaseProducts(event)
                 .then(refundPayment(event))
-                .then(sendOrderStatusUpdate(event, SagaEventType.SAGA_COMPLETED))
+                .then(sendOrderStatusUpdate(event, SagaEventType.SAGA_FAILED))
                 .onErrorResume(e -> handleError(event, e, false));
     }
 
@@ -122,6 +125,7 @@ public class OrchestratorService {
     }
 
     private Mono<Void> releaseProducts(SagaEvent event) {
+        log.info("Releasing products :: {}", event.getOrderRequest());
         List<ProductRequest> productRequests = event.getOrderRequest().getProducts().stream()
                 .map(product -> new ProductRequest(product.getProductId(), product.getQuantity(), 0f))
                 .collect(Collectors.toList());
@@ -131,6 +135,7 @@ public class OrchestratorService {
     }
 
     private Mono<Void> sendOrderStatusUpdate(SagaEvent event, SagaEventType type) {
+        log.info("Sending order status update :: {}", type);
         SagaEvent sagaEvent = new SagaEvent(
                 event.getSagaId(),
                 type.toString(),
